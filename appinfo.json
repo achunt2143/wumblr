@@ -1,0 +1,13 @@
+{
+    "id": "com.achunt.wumblr",
+    "version": "0.0.1",
+    "vendor": "My Company",
+    "type": "web",
+    "main": "index.html",
+    "title": "wumblr",
+    "icon": "icon.png",
+    "requiredPermissions": [
+        "time.query",
+        "activity.operation"
+    ]
+}
