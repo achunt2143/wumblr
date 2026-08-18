@@ -1,0 +1,27 @@
+<svg viewBox="0 0 460 130" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="webosGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5ec8f2"/>
+      <stop offset="100%" stop-color="#0b6fb0"/>
+    </linearGradient>
+    <linearGradient id="tumblrNavy" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1c2b3a"/>
+      <stop offset="100%" stop-color="#001528"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0%" y1="0%" x2="0%" y2="60%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="tileClipSmall"><rect x="0" y="0" width="130" height="130" rx="30"/></clipPath>
+  </defs>
+
+  <rect x="0" y="0" width="130" height="130" rx="30" fill="url(#tumblrNavy)"/>
+  <g clip-path="url(#tileClipSmall)">
+    <rect x="0" y="0" width="130" height="65" fill="url(#gloss)"/>
+  </g>
+  <rect x="2" y="2" width="126" height="126" rx="28" fill="none" stroke="url(#webosGlow)" stroke-width="3"/>
+  <text x="65" y="90" font-family="Georgia, 'Times New Roman', serif" font-size="76" font-style="italic" fill="#f4f6f8" text-anchor="middle">w</text>
+
+  <text x="150" y="80" font-family="Georgia, 'Times New Roman', serif" font-size="56" fill="#f4f6f8">umblr</text>
+  <text x="150" y="110" font-family="Arial, sans-serif" font-size="14" letter-spacing="3" fill="#5ec8f2">for webOS</text>
+</svg>

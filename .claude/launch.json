@@ -6,6 +6,12 @@
 			"runtimeExecutable": "npm",
 			"runtimeArgs": ["run", "serve", "--", "-p", "8081"],
 			"port": 8081
+		},
+		{
+			"name": "wumblr-webos",
+			"runtimeExecutable": "node",
+			"runtimeArgs": ["webos/tools/preview.js"],
+			"port": 8899
 		}
 	]
 }

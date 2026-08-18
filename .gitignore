@@ -20,3 +20,6 @@ src/config/tumblrKeys.js
 
 # build packages
 *.ipk
+
+# webOS port secrets
+webos/source/Keys.js

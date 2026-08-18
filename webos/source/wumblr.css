@@ -1,0 +1,351 @@
+/* wumblr - HP webOS (Enyo 1) styles.
+
+   The palm theme supplies the chrome (headers, toolbars, items, buttons);
+   everything here is app content. */
+
+/* --- login ------------------------------------------------------------ */
+
+.wumblr-login-body {
+	padding: 24px;
+	max-width: 620px;
+	margin: 0 auto;
+}
+
+.wumblr-login-title {
+	font-size: 28px;
+	font-weight: bold;
+	margin-bottom: 8px;
+}
+
+.wumblr-login-help {
+	color: #666;
+	margin-bottom: 20px;
+	line-height: 1.4;
+}
+
+.wumblr-login-verify {
+	margin-top: 20px;
+}
+
+.wumblr-login-error {
+	margin-top: 14px;
+	padding: 10px 12px;
+	border-radius: 6px;
+	background-color: #fdecea;
+	color: #a3261b;
+}
+
+/* --- nav -------------------------------------------------------------- */
+
+.wumblr-nav-item-inner {
+	padding: 0 14px;
+	min-height: 48px;
+}
+
+.wumblr-nav-caption {
+	font-size: 18px;
+	color: #222;
+}
+
+.wumblr-nav-selected {
+	background-color: #dfe6ef;
+}
+
+.wumblr-nav-selected .wumblr-nav-caption {
+	font-weight: bold;
+	color: #35465c;
+}
+
+/* Section heading introducing the grouped destinations. */
+.wumblr-nav-divider {
+	margin-top: 6px;
+}
+
+/* --- feed ------------------------------------------------------------- */
+
+.wumblr-post {
+	padding: 14px 16px 10px 16px;
+	border-bottom: 1px solid #d6d6d6;
+}
+
+.wumblr-post-even {
+	background-color: #ffffff;
+}
+
+.wumblr-post-odd {
+	background-color: #f6f6f6;
+}
+
+.wumblr-post-head {
+	margin-bottom: 8px;
+}
+
+.wumblr-blogname {
+	font-weight: bold;
+	color: #35465c;
+	font-size: 18px;
+	padding: 2px 0;
+}
+
+.wumblr-post-photo {
+	max-width: 100%;
+	border-radius: 4px;
+	margin-bottom: 10px;
+}
+
+.wumblr-post-body {
+	line-height: 1.45;
+	color: #222;
+	word-wrap: break-word;
+	overflow: hidden;
+}
+
+/* Post bodies are arbitrary Tumblr HTML - keep it inside the panel. */
+.wumblr-post-body img,
+.wumblr-post-body video,
+.wumblr-post-body iframe {
+	max-width: 100%;
+	height: auto;
+}
+
+.wumblr-post-body a {
+	color: #35465c;
+	text-decoration: underline;
+}
+
+.wumblr-post-body blockquote {
+	margin: 6px 0 6px 10px;
+	padding-left: 10px;
+	border-left: 3px solid #ccc;
+	color: #555;
+}
+
+.wumblr-post-body p {
+	margin: 0 0 8px 0;
+}
+
+/* Stands in for a GIF or video that has deliberately not been loaded.
+   Sized generously so it reads as "there is media here", and as the tap
+   target that opens it in the media panel. */
+.wumblr-media-stub {
+	margin: 0 0 10px 0;
+	padding: 26px 12px;
+	text-align: center;
+	font-size: 15px;
+	color: #d8e0e8;
+	background-color: #35465c;
+	border-radius: 4px;
+}
+
+.wumblr-post-actions {
+	margin-top: 10px;
+}
+
+.wumblr-post-actions .enyo-button {
+	margin-right: 8px;
+}
+
+.wumblr-liked {
+	color: #c8232c;
+	font-weight: bold;
+}
+
+.wumblr-reblogged,
+.wumblr-following {
+	color: #2b7a2b;
+	font-weight: bold;
+}
+
+.wumblr-notes {
+	color: #888;
+	font-size: 14px;
+	padding-right: 4px;
+}
+
+.wumblr-status {
+	padding: 28px 20px;
+	text-align: center;
+	color: #777;
+}
+
+.wumblr-loadmore {
+	padding: 14px;
+	text-align: center;
+}
+
+/* --- following list --------------------------------------------------- */
+
+.wumblr-search-row {
+	padding: 6px 10px;
+	border-bottom: 1px solid #d6d6d6;
+	background-color: #eeeeee;
+}
+
+.wumblr-search-count {
+	padding-left: 10px;
+	color: #777;
+	font-size: 14px;
+	white-space: nowrap;
+}
+
+.wumblr-blog-row {
+	padding: 8px 12px;
+}
+
+.wumblr-blog-avatar {
+	width: 44px;
+	height: 44px;
+	border-radius: 4px;
+	margin-right: 12px;
+}
+
+.wumblr-blog-name {
+	font-weight: bold;
+	color: #35465c;
+}
+
+.wumblr-blog-title {
+	color: #888;
+	font-size: 14px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* --- headers ---------------------------------------------------------- */
+
+.wumblr-header-title {
+	font-weight: bold;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* --- settings --------------------------------------------------------- */
+
+.wumblr-settings-body {
+	padding: 18px;
+	max-width: 620px;
+}
+
+.wumblr-account {
+	margin-bottom: 18px;
+}
+
+.wumblr-account-avatar {
+	width: 72px;
+	height: 72px;
+	border-radius: 32px 4px 32px 32px;
+	margin-right: 14px;
+}
+
+.wumblr-account-name {
+	font-size: 24px;
+	font-weight: bold;
+}
+
+.wumblr-account-meta {
+	color: #888;
+}
+
+.wumblr-stats {
+	margin-bottom: 20px;
+}
+
+.wumblr-stat {
+	text-align: center;
+	padding: 10px 4px;
+	border-right: 1px solid #ddd;
+}
+
+.wumblr-stat-value {
+	font-size: 22px;
+	font-weight: bold;
+}
+
+.wumblr-stat-label {
+	color: #888;
+	font-size: 13px;
+}
+
+/* A Manage row: what it does on the left, the control that does it on the
+   right. The row itself is not a tap target. */
+.wumblr-manage-row {
+	padding: 6px 4px;
+	min-height: 44px;
+}
+
+.wumblr-manage-label {
+	padding-right: 12px;
+	color: #333;
+}
+
+.wumblr-settings-note {
+	color: #888;
+	font-size: 13px;
+	padding: 6px 4px 0 4px;
+}
+
+.wumblr-confirm-text {
+	padding: 6px 4px 16px 4px;
+	line-height: 1.4;
+}
+
+.wumblr-confirm-buttons .enyo-button {
+	margin: 0 4px;
+}
+
+.wumblr-danger {
+	color: #a3261b;
+	font-weight: bold;
+}
+
+/* --- media panel ------------------------------------------------------ */
+
+.wumblr-media {
+	background-color: #111;
+	text-align: center;
+}
+
+.wumblr-media-image,
+.wumblr-media-video {
+	max-width: 100%;
+	margin: 0 auto;
+}
+
+/* --- busy overlay ----------------------------------------------------- */
+
+/* Wraps the scrim and the spinner so both are toggled as one. Fixed rather
+   than absolute so it covers the panel regardless of how far the scroller
+   has been scrolled, and above the panels so it blocks input while busy. */
+.wumblr-busy {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 101;
+}
+
+/* The child Scrim carries .enyo-scrim (fixed, inset 0, z-index 100, and the
+   0.5s opacity fade), so the content only has to out-stack that number
+   inside this overlay to stay legible through the dim. */
+.wumblr-busy-content {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 101;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-box-pack: center;
+	-webkit-box-align: center;
+}
+
+.wumblr-busy-label {
+	margin-top: 18px;
+	color: #ffffff;
+	font-size: 20px;
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}

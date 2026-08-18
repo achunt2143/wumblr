@@ -1,0 +1,11 @@
+{
+	"id": "com.achunt.wumblr",
+	"version": "1.0.0",
+	"vendor": "achunt",
+	"type": "web",
+	"main": "index.html",
+	"title": "wumblr",
+	"icon": "icon.png",
+	"splashicon": "icon-256x256.png",
+	"uiRevision": 2
+}
