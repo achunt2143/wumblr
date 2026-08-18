@@ -1,5 +1,5 @@
-.sectionNav {
-	padding: 0 24px;
+.tabs {
+	height: 100%;
 }
 
 .scroller {
@@ -7,14 +7,18 @@
 }
 
 .allposts {
-	margin-bottom: 48px;
+	padding-bottom: 48px;
 }
 
-.loadMore {
-	display: block;
-	margin: 24px auto 48px;
+// Centred via a plain wrapper rather than `margin: auto` on the Button
+// itself, whose own `.button.focusExpand` margin rule outranks a single
+// class and would keep pinning it to the left.
+.loadMoreRow {
+	margin: 12px 0 48px;
+	text-align: center;
 }
 
 .status {
-	margin: 48px 24px;
+	margin: 96px 0;
+	text-align: center;
 }

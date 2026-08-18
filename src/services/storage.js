@@ -1,14 +1,10 @@
-import LS2Request from '@enact/webos/LS2Request';
+/* eslint-disable camelcase -- token_secret is the db8 record field name
+   already written by earlier versions; renaming it would orphan stored
+   credentials on existing installs. */
+import {send} from './ls2';
+import * as logger from '../utils/logger';
 
 const KIND_ID = 'com.achunt.wumblr:userinfo';
-
-const send = (options) => new Promise((resolve, reject) => {
-	new LS2Request().send({
-		...options,
-		onSuccess: resolve,
-		onFailure: reject
-	});
-});
 
 const ensureKind = () => send({
 	service: 'luna://com.palm.db/',
@@ -31,7 +27,7 @@ const ensureKind = () => send({
 // Reads the most recently stored token, if any. Resolves to `null` when
 // none is found or when the LS2 bridge isn't available (e.g. in a plain
 // browser preview outside of webOS), rather than rejecting.
-async function getStoredToken() {
+async function getStoredToken () {
 	try {
 		const response = await send({
 			service: 'luna://com.palm.db/',
@@ -50,28 +46,36 @@ async function getStoredToken() {
 			return {token: record.token, tokenSecret: record.token_secret};
 		}
 	} catch (err) {
-		console.warn('storage: getStoredToken failed', err);
+		logger.warn('storage: getStoredToken failed', err);
 	}
 
 	return null;
 }
 
-async function saveToken(token, tokenSecret) {
-	await ensureKind();
-	await send({
-		service: 'luna://com.palm.db/',
-		method: 'put',
-		parameters: {
-			objects: [{
-				_kind: KIND_ID,
-				token,
-				token_secret: tokenSecret
-			}]
-		}
-	});
+// Persisting the token is a convenience (so the next launch skips login),
+// not a requirement for the current session, so a failure here (e.g. no
+// LS2 bridge outside of webOS) shouldn't block a login that otherwise
+// already succeeded against Tumblr's API.
+async function saveToken (token, tokenSecret) {
+	try {
+		await ensureKind();
+		await send({
+			service: 'luna://com.palm.db/',
+			method: 'put',
+			parameters: {
+				objects: [{
+					_kind: KIND_ID,
+					token,
+					token_secret: tokenSecret
+				}]
+			}
+		});
+	} catch (err) {
+		logger.warn('storage: saveToken failed', err);
+	}
 }
 
-async function clearStoredToken() {
+async function clearStoredToken () {
 	try {
 		const response = await send({
 			service: 'luna://com.palm.db/',
@@ -87,7 +91,7 @@ async function clearStoredToken() {
 			});
 		}
 	} catch (err) {
-		console.warn('storage: clearStoredToken failed', err);
+		logger.warn('storage: clearStoredToken failed', err);
 	}
 }
 

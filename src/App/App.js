@@ -15,11 +15,11 @@ const App = kind({
 	},
 
 	render: function () {
-			return (
-				<Panels>
-					<MainPanel />
-				</Panels>
-			);
+		return (
+			<Panels>
+				<MainPanel />
+			</Panels>
+		);
 	}
 });
 

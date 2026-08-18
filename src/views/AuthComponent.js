@@ -6,9 +6,11 @@ import InputField from '@enact/sandstone/Input';
 import Item from '@enact/sandstone/Item';
 import Popup from '@enact/sandstone/Popup';
 import PropTypes from 'prop-types';
-import React, {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
 import css from './AuthComponent.module.less';
+import {$L} from '../utils/i18n';
+import * as logger from '../utils/logger';
 
 // A companion server (outside this repo) exchanges a short-lived code,
 // obtained by the user from the Tumblr OAuth1 web flow, for an access
@@ -27,27 +29,27 @@ const AuthComponent = ({onAuthenticate}) => {
 		mounted.current = false;
 	}, []);
 
-	const handleLogin = () => {
+	const handleLogin = useCallback(() => {
 		setErrorMessage('');
 		setCode('');
 		setPopupVisible(true);
-	};
+	}, []);
 
-	const handlePopupClose = () => {
+	const handlePopupClose = useCallback(() => {
 		if (isVerifying) return;
 		setPopupVisible(false);
 		setErrorMessage('');
-	};
+	}, [isVerifying]);
 
-	const handleCodeChange = (ev) => setCode(ev.value);
+	const handleCodeChange = useCallback((ev) => setCode(ev.value), []);
 
-	const handleVerifyCode = async () => {
+	const handleVerifyCode = useCallback(async () => {
 		setIsVerifying(true);
 		setErrorMessage('');
 		try {
 			const response = await fetch(`${CODE_ENDPOINT}?code=${encodeURIComponent(code)}`);
 			if (!response.ok) {
-				throw new Error(response.status === 404 ? 'Code is invalid' : 'Something went wrong verifying that code');
+				throw new Error(response.status === 404 ? $L('Code is invalid') : $L('Something went wrong verifying that code'));
 			}
 			const data = await response.json();
 			await onAuthenticate(data.accessToken, data.tokenSecret);
@@ -59,28 +61,28 @@ const AuthComponent = ({onAuthenticate}) => {
 			// something like "Unexpected token '<'...is not valid JSON".
 			const friendlyMessage = err instanceof Error && err.constructor === Error ?
 				err.message :
-				'Could not reach the login server. Please try again.';
-			console.warn('AuthComponent: verification failed', err);
+				$L('Could not reach the login server. Please try again.');
+			logger.warn('AuthComponent: verification failed', err);
 			if (mounted.current) setErrorMessage(friendlyMessage);
 		} finally {
 			if (mounted.current) setIsVerifying(false);
 		}
-	};
+	}, [code, onAuthenticate]);
 
 	return (
 		<div className={css.container}>
-			<Heading size="large">Login to wumblr</Heading>
+			<Heading size="large">{$L('Login to wumblr')}</Heading>
 			<BodyText size="large">
-				Please navigate to website to get your 7 digit code.
+				{$L('Please navigate to website to get your 7 digit code.')}
 			</BodyText>
-			<Button onClick={handleLogin}>Login with code</Button>
+			<Button onClick={handleLogin}>{$L('Login with code')}</Button>
 
 			<Popup aria-label="Verify Code" open={popupVisible} onClose={handlePopupClose}>
 				<div className={css.popupContent}>
 					<InputField
 						className={css.input}
 						disabled={isVerifying}
-						placeholder="Enter 7-digit code"
+						placeholder={$L('Enter 7-digit code')}
 						size="large"
 						type="text"
 						value={code}
@@ -91,7 +93,7 @@ const AuthComponent = ({onAuthenticate}) => {
 						disabled={isVerifying || code.length === 0}
 						onClick={handleVerifyCode}
 					>
-						{isVerifying ? 'Verifying…' : 'Verify Code'}
+						{isVerifying ? $L('Verifying…') : $L('Verify Code')}
 					</Button>
 					{errorMessage ? (
 						<Item slotBefore={<Icon>exclamation</Icon>}>

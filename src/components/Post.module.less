@@ -1,36 +1,198 @@
+// Sandstone gives Buttons and BodyText their own 0.75rem horizontal margin.
+// Left as-is those margins land every row on a different left edge, so the
+// card cancels them and owns a single inset instead. Lengths are authored at
+// TV scale (1920x1080); Enact converts px to rem and scales them down.
+@card-inset: 42px;
+@button-margin: 36px; // Sandstone Button's own 0.75rem side margin
+@blog-name-pad: 12px; // breathing room for the blog-name focus highlight
+
+.card {
+	border-radius: 24px;
+	padding: @card-inset;
+	margin: 0 0 24px;
+}
+
+// Alternating card tints, both kept dark enough for white body text - the
+// original lightsteelblue washed it out to roughly 1.9:1 contrast.
 .postEVEN {
-	background-color: steelblue;
-	border-radius: 25px;
-	padding: 20px;
-	margin: 20px;
+	.card();
+
+	background-color: #4682b4; // steelblue
 }
 
 .postODD {
-	background-color: lightsteelblue;
-	border-radius: 25px;
-	padding: 20px;
-	margin: 20px;
+	.card();
+
+	background-color: #3a6288;
 }
 
-.blogName {
+// A transparent text button, so its label - not its invisible box - is what
+// needs to line up with the body text below. Sandstone's own side margin
+// can't be overridden from the button's class (its
+// `.button.small.focusExpand` rule outranks anything reasonable), so the
+// plain wrapper is offset instead. Landing point: label on the card's
+// content edge, with the focus highlight still padded and inside the card.
+@blog-name-offset: (@button-margin + @blog-name-pad);
+
+.blogNameRow {
+	margin: 0 0 18px;
+	margin-left: -@blog-name-offset;
+}
+
+.blogName.blogName {
+	padding: 0 @blog-name-pad;
+}
+
+// Focusable wrapper so the post photo can be opened with the 5-way pad as
+// well as a pointer; Sandstone's Image is not spottable on its own.
+.photoFrame {
 	display: block;
-	margin-bottom: 12px;
+	margin-bottom: 24px;
+	border-radius: 12px;
+
+	&:focus {
+		outline: 6px solid #fff;
+		outline-offset: 6px;
+	}
 }
 
 .postImage {
 	width: 100%;
-	max-height: 480px;
+	height: 400px;
+	border-radius: 12px;
 }
 
 .postBody {
-	margin: 12px 0;
+	margin: 0 0 24px;
+
+	// Reblogged/text posts carry their own <img>/<video> tags inline in the
+	// raw HTML (post.body/caption) - Tumblr serves animated GIFs as <video>
+	// - separate from the dedicated post.photos entry above and unstyled by
+	// default, rendering at whatever size (up to 720x1280 for a GIF) they
+	// please. Constrain those, and keep them left-aligned so they sit against
+	// the quote rule rather than floating away from it when nested.
+	img,
+	video {
+		display: block;
+		max-width: 100%;
+		max-height: 540px;
+		height: auto;
+		margin: 18px 0;
+		border-radius: 12px;
+	}
+
+	video {
+		object-fit: contain;
+	}
+
+	p {
+		margin: 0 0 12px;
+	}
+
+	// Reblog chains nest a <blockquote> per hop, and the browser default
+	// 40px indent compounds until deep chains are pushed off to the right.
+	// A flat, bordered indent keeps the quoting legible at any depth.
+	blockquote {
+		margin: 0 0 12px;
+		padding-left: 24px;
+		border-left: 3px solid rgba(255, 255, 255, 0.35);
+	}
+
+	a {
+		color: inherit;
+		font-weight: 600;
+	}
+
+	// Inline media and blog links are tagged spottable at runtime (they come
+	// from raw HTML), so they need a focus treatment of their own - Sandstone
+	// only styles its own components.
+	:global(.spottable) {
+		cursor: pointer;
+
+		&:focus {
+			outline: 6px solid #fff;
+			outline-offset: 4px;
+		}
+	}
 }
 
 .postActions {
 	align-items: center;
-	margin-top: 12px;
+	// Cancel the leading button's own margin so the row starts on the card's
+	// content edge rather than 0.75rem inside it.
+	margin-left: -@button-margin;
+}
+
+@keyframes wumblrPop {
+	0% {
+		transform: scale(1);
+	}
+
+	35% {
+		transform: scale(1.5);
+	}
+
+	70% {
+		transform: scale(0.9);
+	}
+
+	100% {
+		transform: scale(1);
+	}
+}
+
+@keyframes wumblrSplash {
+	0% {
+		opacity: 0.7;
+		transform: scale(0.4);
+	}
+
+	100% {
+		opacity: 0;
+		transform: scale(2.6);
+	}
+}
+
+// Applied to the Button's internal icon element through Sandstone's `css`
+// prop, which is the supported way in to a component's inner parts.
+.actionIcon {
+	position: relative;
+	transition: color 220ms ease-out;
+}
+
+// Scoped to both classes the icon carries: Sandstone's own `.neutral` colour
+// rule is a single class too, and ties are settled by source order - which
+// Sandstone wins.
+.actionIcon.liked {
+	color: #ff4f6e;
+}
+
+.actionIcon.reblogged {
+	color: #43d18b;
+}
+
+// Added for the length of the animation once an action is confirmed by the
+// server, then removed - so the flourish marks a real success, not a tap.
+.celebrate {
+	animation: wumblrPop 520ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+	&::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 84px;
+		height: 84px;
+		margin: -42px 0 0 -42px;
+		border-radius: 50%;
+		background-color: currentColor;
+		opacity: 0;
+		pointer-events: none;
+		animation: wumblrSplash 620ms ease-out;
+	}
 }
 
 .notes {
-	margin-left: 24px;
+	margin: 0 0 0 24px;
+	opacity: 0.85;
 }

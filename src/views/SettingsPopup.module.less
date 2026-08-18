@@ -1,0 +1,118 @@
+// Lengths are authored at TV scale (1920x1080); Enact converts px to rem
+// and scales them down.
+@accent: #7ab8e8;
+@rule: rgba(255, 255, 255, 0.16);
+
+// A right-anchored Popup spans the full width by default, which reads as a
+// takeover rather than a panel belonging to the gear it came from.
+.popup {
+	width: 1560px;
+	margin-left: auto;
+}
+
+.content {
+	// Full height so the scroll region below the pinned header can claim
+	// whatever space is left.
+	height: 100%;
+	padding: 30px 42px 42px;
+}
+
+.scroller {
+	height: 100%;
+}
+
+// Title left, dismiss right, with a rule under it - gives the sheet a
+// proper head instead of text floating above buttons.
+.header {
+	align-items: center;
+	justify-content: space-between;
+	padding-bottom: 18px;
+	border-bottom: 3px solid @rule;
+}
+
+.title {
+	margin: 0;
+}
+
+.closeButton.closeButton {
+	margin: 0;
+}
+
+// Identity first: avatar plus blog name, so the sheet opens with "who am I
+// signed in as" rather than a sentence to parse.
+.account {
+	align-items: center;
+	margin: 30px 0 36px;
+	padding-right: 24px;
+}
+
+.avatar {
+	width: 132px;
+	height: 132px;
+	margin-right: 27px;
+	border-radius: 1em 0.1em 1em 1em;
+	margin-left: 0;
+}
+
+.accountName {
+	margin: 0;
+	font-weight: 600;
+}
+
+.accountMeta {
+	margin: 0;
+	opacity: 0.65;
+}
+
+// Two figures at a glance beat one run-on sentence.
+.stats {
+	margin-bottom: 36px;
+}
+
+.stat {
+	// Keeps adjacent figures from running into each other.
+	padding-right: 60px;
+}
+
+.statsRow {
+	margin-top: 24px;
+}
+
+.statValue {
+	margin: 0;
+	color: @accent;
+	font-size: 60px;
+	font-weight: 600;
+	line-height: 1.1;
+}
+
+.statLabel {
+	margin: 0;
+	opacity: 0.65;
+}
+
+.sectionLabel {
+	margin: 0 0 6px;
+	opacity: 0.65;
+	text-transform: uppercase;
+	letter-spacing: 3px;
+}
+
+.actions {
+	border-top: 3px solid @rule;
+	padding-top: 12px;
+}
+
+// Sandstone Items give each action an icon and a line of explanation, and
+// are spottable - a better fit for a remote than a stack of bare buttons.
+.action.action {
+	margin: 0;
+}
+
+.actionIcon {
+	color: @accent;
+}
+
+.signOutIcon {
+	color: #ff8a9b;
+}
