@@ -60,7 +60,7 @@ enyo.kind({
 						{kind: enyo.HFlexBox, className: "wumblr-manage-row", align: "center", components: [
 							{flex: 1, className: "wumblr-manage-label", content: "End this session"},
 							{
-								name: "signOut", kind: "Button", className: "wumblr-danger",
+								name: "signOut", kind: "Button", className: "enyo-button-negative",
 								caption: "Sign out", onclick: "signOutClick"
 							}
 						]}
@@ -69,14 +69,6 @@ enyo.kind({
 				{
 					className: "wumblr-settings-note",
 					content: "The following list is only fetched when you rebuild it."
-				},
-
-				{kind: "RowGroup", caption: "Login server", components: [
-					{name: "server", kind: "Input", hint: "http://192.168.1.10:8080", inputType: "url", onchange: "serverChanged"}
-				]},
-				{
-					className: "wumblr-settings-note",
-					content: "Used only to exchange a login code for an access token."
 				}
 			]}
 		]},
@@ -97,8 +89,7 @@ enyo.kind({
 		{name: "confirmRebuild", kind: "ModalDialog", caption: "Rebuild following list", components: [
 			{
 				className: "wumblr-confirm-text",
-				content: "Re-read every page of your following list? That is around 21 requests, " +
-					"and is the only way to drop blogs you unfollowed elsewhere."
+				content: "Re-read your following list? This is the only way to drop blogs you unfollowed elsewhere."
 			},
 			{
 				layoutKind: "HFlexLayout", pack: "center",
@@ -117,7 +108,7 @@ enyo.kind({
 				className: "wumblr-confirm-buttons",
 				components: [
 					{kind: "Button", caption: "Cancel", onclick: "cancelSignOut"},
-					{kind: "Button", className: "wumblr-danger", caption: "Sign out", onclick: "acceptSignOut"}
+					{kind: "Button", className: "enyo-button-negative", caption: "Sign out", onclick: "acceptSignOut"}
 				]
 			}
 		]}
@@ -125,7 +116,6 @@ enyo.kind({
 
 	create: function () {
 		this.inherited(arguments);
-		this.$.server.setValue(window.wumblr.config.getLoginServer());
 		this.profileChanged();
 		this.syncingChanged();
 	},
@@ -159,12 +149,6 @@ enyo.kind({
 	syncingChanged: function () {
 		this.$.rebuild.setCaption(this.syncing ? "Rebuilding…" : "Rebuild");
 		this.$.rebuild.setDisabled(this.syncing);
-	},
-
-	serverChanged: function () {
-		var value = String(this.$.server.getValue() || "").replace(/^\s+|\s+$/g, "");
-		window.wumblr.config.setLoginServer(value);
-		return true;
 	},
 
 	// openAtCenter rather than open: plain open() applies no bounds at all,

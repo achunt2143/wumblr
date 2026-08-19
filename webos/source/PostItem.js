@@ -49,8 +49,14 @@ function attr (tag, name) {
 function stub (type, src, label) {
 	// Without a usable source the stub is inert rather than a tap that opens
 	// an empty panel.
+	//
+	// & has to go first: a signed/tokenized URL (more likely on video than
+	// a plain image path) can have several &-separated query params, and
+	// each one left unescaped in an HTML attribute is a malformed entity
+	// reference waiting to happen once this string is parsed as markup.
+	var escapedSrc = String(src).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 	var attrs = src ?
-		' data-wumblr-type="' + type + '" data-wumblr-src="' + String(src).replace(/"/g, "&quot;") + '"' :
+		' data-wumblr-type="' + type + '" data-wumblr-src="' + escapedSrc + '"' :
 		'';
 	return '<div class="wumblr-media-stub"' + attrs + '>' + label + '</div>';
 }
@@ -120,10 +126,27 @@ enyo.kind({
 			})
 			.replace(/<video\b[^>]*>[\s\S]*?<\/video>|<video\b[^>]*>/gi, function (tag) {
 				// The source may be on the tag itself or on a nested <source>.
+				// Confirmed on-device: Tumblr only ever embeds one <source>
+				// here in practice (never an mp4 alongside the mov, which
+				// would have been the fix for MediaPanel's unplayable-video
+				// case - it isn't there to prefer). Still worth matching all
+				// of them and preferring an mp4-typed one rather than just
+				// the first, on the chance some post shape does offer more
+				// than one - standard <source> fallback order, cheap to keep
+				// correct even though it's not doing anything today.
 				var src = attr(tag, "src");
 				if (!src) {
-					var inner = tag.match(/<source\b[^>]*>/i);
-					if (inner) src = attr(inner[0], "src");
+					var sources = tag.match(/<source\b[^>]*>/gi) || [];
+					var mp4Source = null;
+					for (var i = 0; i < sources.length; i++) {
+						var type = attr(sources[i], "type") || "";
+						if (type.indexOf("mp4") >= 0) {
+							mp4Source = sources[i];
+							break;
+						}
+					}
+					var chosen = mp4Source || sources[0];
+					if (chosen) src = attr(chosen, "src");
 				}
 				return stub("video", src, "Video — tap to play");
 			});

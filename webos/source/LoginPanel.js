@@ -1,16 +1,22 @@
 /*
-	Sign-in.
+	Sign-in, via the shared community webOS OAuth broker
+	(https://oauth.wosa.link, github.com/webOSArchive/oauth-broker-for-webos)
+	instead of a bespoke companion server.
 
-	Unchanged in substance from the Enact build: a companion server (outside
-	this repo) runs the Tumblr OAuth1 web flow and exchanges a short-lived
-	code for an access token/secret pair, so the device never handles the
-	3-legged handshake or an embedded browser.
+	Tumblr requires the standard three-legged OAuth1 dance - a real consent
+	screen on tumblr.com, not a direct username/password exchange - which the
+	device categorically cannot do itself: its 2009-era TLS can't reach
+	tumblr.com and its browser renders the consent page blank. The broker
+	does that whole dance server-side. This panel's job shrinks to three
+	calls: ask for a code, show it, poll until tokens show up.
 
-	The server's address is editable here rather than baked in. On a TV
-	"localhost:8080" was a stand-in for a machine on the same network; on a
-	TouchPad it would resolve to the tablet itself, and the address changes
-	often enough during development that repackaging to move it is a waste.
-	It persists, so it only has to be typed once.
+	Helpers.OAuthBroker (source/lib/OAuthBroker-Helper.js, synced verbatim
+	from webOSArchive/webos-common) is the engine; this is the view wired to
+	it, following the pattern in that repo's OAuthExample almost exactly -
+	notably the code is shown inline rather than in a ModalDialog (old Enyo
+	builds a dialog's children lazily, so writing into one before it opens
+	throws) and polling runs in the background rather than behind a manual
+	Verify tap, so a slow poll never reads as a stall.
 */
 enyo.kind({
 	name: "LoginPanel",
@@ -22,30 +28,76 @@ enyo.kind({
 	},
 
 	components: [
+		// The slug wumblr is registered under on the broker - see
+		// apps/wumblr/config.example.php in the broker repo. Not secret,
+		// just an identifier; the consumer key/secret that actually sign
+		// requests live in Keys.js, same as before.
+		//
+		// brokerBaseUrl is left unset deliberately: the Helper's own default
+		// (https://oauth.wosa.link) is correct here, the same production
+		// broker every other app on it uses. A local-machine override was
+		// used during development to verify the oauth1_3legged flow against
+		// real Tumblr before apps/wumblr existed on the real broker; it has
+		// no reason to exist in this file once that app is actually deployed
+		// there. If sign-in needs to be pointed at a dev broker again, add
+		// brokerBaseUrl back here rather than reintroducing a stored,
+		// user-editable setting - see webos/README.md's Sign-in section for
+		// why that's not how this integration is meant to work.
+		{
+			kind: "Helpers.OAuthBroker", name: "broker", appName: "wumblr",
+			onCode: "showCode", onConnected: "storeTokens",
+			onExpired: "codeExpired", onError: "brokerError"
+		},
+
 		{kind: "Header", content: "wumblr"},
+
 		{kind: "Scroller", flex: 1, components: [
 			{className: "wumblr-login-body", components: [
 				{content: "Log in to wumblr", className: "wumblr-login-title"},
-				{
-					className: "wumblr-login-help",
-					content: "Open the wumblr login page on another device to get your code, then enter it below."
-				},
 
-				{kind: "RowGroup", caption: "Login code", components: [
-					{name: "code", kind: "Input", hint: "Enter your code"}
+				// ── Step 1: Sign In ────────────────────────────────────────
+				{name: "startPanel", components: [
+					{
+						className: "wumblr-login-help",
+						content: "Tap Sign In, then finish on a phone or computer."
+					},
+					{name: "signIn", kind: "Button", className: "wumblr-login-start", caption: "Sign In", onclick: "signInClick"}
 				]},
 
-				{kind: "RowGroup", caption: "Login server", components: [
-					{name: "server", kind: "Input", hint: "http://192.168.1.10:8080", inputType: "url"}
+				// ── Step 2: shown once the broker hands back a code ─────────
+				{name: "codePanel", showing: false, className: "wumblr-login-code-panel", components: [
+					{className: "wumblr-login-help", content: "On a modern phone or computer, go to:"},
+					{name: "codeUrl", className: "wumblr-login-code-url"},
+					{className: "wumblr-login-help", content: "and enter this code:"},
+					{name: "codeValue", className: "wumblr-login-code-value"},
+
+					// The activate page reads ?code= to pre-fill the code
+					// field (see activate.php's $prefill), so encoding the
+					// code into the URL turns "scan, read, type, submit"
+					// into "scan, tap Continue" - kept alongside the text
+					// above rather than replacing it, since not everyone
+					// testing this has a phone camera to hand.
+					{className: "wumblr-login-help", content: "or scan to open it pre-filled:"},
+					{name: "qr", kind: "QrCode", size: 260, className: "wumblr-login-qr"},
+
+					{name: "codeStatus", className: "wumblr-login-code-status"},
+					{kind: enyo.HFlexBox, pack: "center", className: "wumblr-login-code-actions", components: [
+						{name: "checkNow", kind: "Button", caption: "Check now", onclick: "checkNowClick"},
+						{kind: "Button", className: "enyo-button-negative", caption: "Cancel", onclick: "cancelClick"}
+					]}
 				]},
 
-				{name: "verify", kind: "Button", className: "wumblr-login-verify", caption: "Verify code", onclick: "verifyClick"},
 				{name: "error", className: "wumblr-login-error", showing: false}
 			]}
 		]},
 
 		/*
-			Shown while a request is in flight.
+			Covers the two brief round trips - minting a code, and fetching
+			the Tumblr profile once tokens arrive - not the wait in between.
+			That wait is the whole point of showing the code: the user needs
+			the device readable while they go do something on another one, so
+			it gets the inline codePanel and a background poll instead of
+			ever being scrimmed.
 
 			The Scrim here is a component of this panel rather than the
 			enyo.scrim singleton. The singleton renders into the popup layer,
@@ -66,38 +118,20 @@ enyo.kind({
 	//* @protected
 	busy: false,
 
-	create: function () {
-		this.inherited(arguments);
-		this.refreshConfig();
-	},
-
-	// Called again once the store has hydrated: this panel is built before
-	// db8 has answered, so the first read only sees the packaged default.
-	refreshConfig: function () {
-		this.$.server.setValue(window.wumblr.config.getLoginServer());
-	},
-
-	trim: function (value) {
-		return String(value === null || value === undefined ? "" : value).replace(/^\s+|\s+$/g, "");
-	},
-
 	/*
-		`message` names the phase, because verifying a code and then fetching
-		the account are two round trips and the scrim stays up across both -
-		leaving it on "Verifying code" through the second one would read as a
-		stall.
+		`message` names the phase, because minting a code and then fetching
+		the account are two separate round trips that can both be busy - and
+		because leaving the label on the first one's text through the second
+		would read as a stall.
 	*/
 	setBusy: function (busy, message) {
 		this.busy = busy;
-		this.$.verify.setCaption(busy ? "Verifying…" : "Verify code");
-		this.$.verify.setDisabled(busy);
-		this.$.code.setDisabled(busy);
-		this.$.server.setDisabled(busy);
+		this.$.signIn.setDisabled(busy);
 
 		// Only on the way in: the label is meaningless once hidden, and
 		// rewriting it on every hide would clobber the phase just shown.
 		if (busy) {
-			this.$.busyLabel.setContent(message || "Verifying code…");
+			this.$.busyLabel.setContent(message || "Working…");
 		}
 
 		// Overlay first, then the scrim. Scrim applies its dim class on the
@@ -112,70 +146,87 @@ enyo.kind({
 		this.$.error.setContent(message || "");
 	},
 
-	verifyClick: function () {
+	signInClick: function () {
 		if (this.busy) return true;
-
-		var code = this.trim(this.$.code.getValue());
-		var server = this.trim(this.$.server.getValue());
-
-		if (!code) {
-			this.showError("Enter the code from the login page.");
-			return true;
-		}
-		if (!server) {
-			this.showError("Enter the address of your login server.");
-			return true;
-		}
-
-		window.wumblr.config.setLoginServer(server);
 		this.showError("");
-		this.setBusy(true, "Verifying code…");
-
-		var url = server.replace(/\/+$/, "") + "/wumblr/heresTheCode?code=" + encodeURIComponent(code);
-
-		enyo.xhr.request({
-			url: url,
-			method: "GET",
-			callback: enyo.bind(this, function (text, xhr) {
-				var status = xhr ? xhr.status : 0;
-
-				if (status === 404) {
-					this.reportFailure("That code is invalid.");
-					return;
-				}
-				if (status < 200 || status >= 300) {
-					// status 0 is the usual shape of "server not running" or
-					// "TLS handshake refused" on this platform.
-					this.reportFailure(status === 0 ?
-						"Could not reach the login server at " + server + "." :
-						"Something went wrong verifying that code (" + status + ").");
-					return;
-				}
-
-				var data = null;
-				try {
-					data = text ? enyo.json.parse(text) : null;
-				} catch (e) {
-					data = null;
-				}
-
-				if (!data || !data.accessToken || !data.tokenSecret) {
-					this.reportFailure("The login server sent back an unexpected response.");
-					return;
-				}
-
-				// Stay busy: the app still has to fetch the account before it
-				// can show anything, and dropping the scrim in between would
-				// flash the form back up for a moment.
-				this.setBusy(true, "Signing in…");
-				this.doAuthenticate({token: data.accessToken, tokenSecret: data.tokenSecret});
-			})
-		});
-
+		this.setBusy(true, "Starting…");
+		this.$.broker.start();
 		return true;
 	},
 
-	//* Called by the app when the token the server handed back is rejected.
+	// onCode: the broker minted a code and started polling in the
+	// background. Show it; nothing more to do until onConnected/onExpired.
+	showCode: function (inSender, codeInfo) {
+		this.setBusy(false);
+		this.$.codeUrl.setContent(codeInfo.useUrl);
+		this.$.codeValue.setContent(codeInfo.code);
+		// Deliberately not codeInfo.useUrl + "?code=": useUrl is the broker's
+		// pretty /wumblr path, which needs a server rewrite to reach
+		// activate.php at all. The live broker is nginx, .htaccess's rewrite
+		// is Apache-only and never runs there, and whatever nginx has
+		// instead for that path drops query strings - confirmed live, the
+		// code never arrived and the box stayed empty. activate.php's
+		// ?app=&code= form hits the same page directly, no rewrite involved
+		// on any host, and activate.php's $prefill reads that same ?code=.
+		this.$.qr.setText(
+			this.$.broker.getBrokerBaseUrl() + "/activate.php?app=" +
+			encodeURIComponent(this.$.broker.getAppName()) +
+			"&code=" + encodeURIComponent(codeInfo.code));
+		this.$.codeStatus.setContent("Waiting for you to finish signing in…");
+		this.$.startPanel.hide();
+		this.$.codePanel.show();
+		return true;
+	},
+
+	// Manual fallback if the background poll feels slow.
+	checkNowClick: function () {
+		this.$.codeStatus.setContent("Checking…");
+		this.$.broker.checkNow();
+		return true;
+	},
+
+	// onConnected: tokens are here, handed over exactly once. Hand them
+	// straight to the app in the {token, tokenSecret} shape it already
+	// expects - Store.js/TumblrClient.js don't need to know the broker's
+	// field names (oauth_token/oauth_token_secret) exist.
+	storeTokens: function (inSender, tokens) {
+		this.$.codePanel.hide();
+		this.$.startPanel.show();
+		// Still busy: the app has to fetch the Tumblr profile before it can
+		// show anything, and dropping the scrim in between would flash the
+		// sign-in screen back up for a moment.
+		this.setBusy(true, "Signing in…");
+		this.doAuthenticate({token: tokens.oauth_token, tokenSecret: tokens.oauth_token_secret});
+		return true;
+	},
+
+	// onExpired: the broker no longer knows this code (expired, or already
+	// claimed). Nothing to keep waiting for - say so and let Cancel reset.
+	codeExpired: function () {
+		this.$.codeStatus.setContent("That code expired. Tap Cancel, then Sign In again.");
+		return true;
+	},
+
+	// onError: couldn't reach the broker at all (network down, or - on this
+	// platform - a TLS handshake refused if the SSL-bump proxy isn't set up).
+	brokerError: function (inSender, message) {
+		this.setBusy(false);
+		this.$.codePanel.hide();
+		this.$.startPanel.show();
+		this.showError(message || "Could not reach the sign-in service. Check your connection and try again.");
+		return true;
+	},
+
+	cancelClick: function () {
+		this.$.broker.stop();
+		this.$.codePanel.hide();
+		this.$.startPanel.show();
+		this.showError("");
+		return true;
+	},
+
+	//* Called by the app when the profile fetch after a successful sign-in
+	//* fails outright (as opposed to the broker itself failing above).
 	reportFailure: function (message) {
 		this.setBusy(false);
 		this.showError(message);

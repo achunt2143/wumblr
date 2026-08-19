@@ -74,18 +74,15 @@ enyo.kind({
 		this.slotOpen = [false, false];
 		this.inherited(arguments);
 
-		// db8 reads are asynchronous, so nothing stored is known yet - not
-		// the token, not the login server. The scrim covers the gap rather
-		// than briefly showing a login form that may be about to disappear.
+		// db8 reads are asynchronous, so the stored token isn't known yet.
+		// The scrim covers the gap rather than briefly showing a login
+		// screen that may be about to disappear.
 		this.$.login.setBusy(true, "Starting…");
 		window.wumblr.store.hydrate(enyo.bind(this, "storeReady"));
 	},
 
 	// Everything persisted is now in memory and reads synchronously.
 	storeReady: function () {
-		// Panels were built before the store had anything to give them.
-		this.$.login.refreshConfig();
-
 		var token = window.wumblr.prefs.get("token", null);
 		var tokenSecret = window.wumblr.prefs.get("tokenSecret", null);
 

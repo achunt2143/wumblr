@@ -15,16 +15,73 @@
 	font-size: 28px;
 	font-weight: bold;
 	margin-bottom: 8px;
+	text-align: center;
 }
 
 .wumblr-login-help {
 	color: #666;
 	margin-bottom: 20px;
 	line-height: 1.4;
+	text-align: center;
 }
 
-.wumblr-login-verify {
+.wumblr-login-start {
 	margin-top: 20px;
+}
+
+/* The "go to this URL, enter this code" step. Centred and spaced out - it's
+   read from across the room, not tapped through quickly like a form. */
+.wumblr-login-code-panel {
+	text-align: center;
+	padding-top: 4px;
+}
+
+.wumblr-login-code-url {
+	font-size: 18px;
+	font-weight: bold;
+	color: #35465c;
+	word-break: break-all;
+	padding-bottom: 14px;
+}
+
+.wumblr-login-code-value {
+	font-size: 40px;
+	font-weight: bold;
+	letter-spacing: 8px;
+	font-family: monospace;
+	padding: 8px 0 4px;
+}
+
+/* qrcodejs draws to a canvas, then (once it can read the canvas back as a
+   data URI, which is every real browser this ever runs in) swaps to an
+   <img> and hides the canvas - the img is what's actually on screen. It
+   sets that img's display to "block" itself, inline, which the code-panel's
+   text-align can't center: text-align only centers inline content, not a
+   block box. So both elements get their own display/margin here rather
+   than relying on the ancestor, and both get the white padded card - not
+   just the canvas - so whichever one is actually showing gets a real quiet
+   zone around the modules (a QR reader needs that to scan reliably,
+   regardless of whatever the surrounding theme background is). */
+.wumblr-login-qr {
+	margin: 4px 0 14px;
+}
+
+.wumblr-login-qr canvas,
+.wumblr-login-qr img {
+	display: block;
+	margin: 0 auto;
+	background-color: #ffffff;
+	padding: 14px;
+	border-radius: 4px;
+}
+
+.wumblr-login-code-status {
+	color: #888;
+	padding: 10px 0 6px;
+}
+
+.wumblr-login-code-actions .enyo-button {
+	margin: 0 6px;
 }
 
 .wumblr-login-error {
@@ -288,16 +345,14 @@
 
 .wumblr-confirm-text {
 	padding: 6px 4px 16px 4px;
+	font-size: 15px;
+	color: #444;
 	line-height: 1.4;
 }
 
 .wumblr-confirm-buttons .enyo-button {
+	min-width: 96px;
 	margin: 0 4px;
-}
-
-.wumblr-danger {
-	color: #a3261b;
-	font-weight: bold;
 }
 
 /* --- media panel ------------------------------------------------------ */

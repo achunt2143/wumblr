@@ -23,17 +23,61 @@ cp webos/source/Keys.example.js webos/source/Keys.js
 
 `consumerKey`/`consumerSecret` come from an app registered at
 [tumblr.com/oauth/apps](https://www.tumblr.com/oauth/apps). They have to be on
-the device because the app signs every API request itself; only the
-code-for-token exchange happens on the companion server.
+the device because the app signs every Tumblr API request itself, after
+sign-in — see **Sign-in** below for what obtains the token in the first place.
 
-`loginServer` is that companion server's base URL. It can also be set on the
-device from **Settings → Login server** (and on the login screen), which is
-easier than repackaging while the server moves around.
+## Sign-in
 
-`Keys.js` is the default and takes precedence: an address typed on the device
-sticks only until this file changes, and a build carrying a new `loginServer`
-retires it. Editing here is therefore always enough to move the server. See
-`source/services/Config.js`.
+The device asks the user to sign in through the shared community **webOS
+OAuth broker** (`https://oauth.wosa.link`,
+[webOSArchive/oauth-broker-for-webos](https://github.com/webOSArchive/oauth-broker-for-webos))
+rather than a bespoke companion server. The device can't do OAuth itself — its
+2009-era TLS can't reach `tumblr.com` and its browser renders the consent
+screen blank — so the broker does the whole three-legged OAuth1 dance
+server-side. wumblr's part shrinks to three calls: ask the broker for a code,
+show it, poll until tokens show up. See `LoginPanel.js` and
+`source/lib/OAuthBroker-Helper.js` (synced verbatim from
+[webOSArchive/webos-common](https://github.com/webOSArchive/webos-common) —
+don't hand-edit it, re-sync it).
+
+The code is also shown as a QR encoding the same URL with `?code=` appended
+(`source/QrCode.js`, wrapping a vendored, unmodified, ES5-clean copy of
+[davidshimjs/qrcodejs](https://github.com/davidshimjs/qrcodejs) at
+`source/lib/QrCodeLib.js`) — `activate.php` on the broker pre-fills its code
+field from that same query param, so scanning it is sign-in with no typing.
+It's shown alongside the URL/code text, not instead of it, since not every
+device this runs on has a camera to hand.
+
+wumblr is registered on the broker under the slug **`wumblr`**
+(`Helpers.OAuthBroker`'s `appName` in `LoginPanel.js`). That slug, and which
+flow type it uses, are choices made while building this integration, not
+settled convention — confirm both with whoever ends up merging the broker PR
+before relying on them.
+
+**The broker didn't support Tumblr before this.** It shipped two flows —
+`oauth2_authcode` for modern OAuth2, and `oauth1_xauth` for OAuth1 providers
+that accept a direct username/password exchange (e.g. Instapaper). Tumblr
+supports neither: it's OAuth1, but it rejects xAuth outright and requires the
+standard request-token → authorize-redirect → verifier dance. A third flow,
+`oauth1_3legged`, was added to a local clone of the broker
+(`lib/OAuth1.php`, `start.php`, `callback.php`) to cover it — see that repo's
+own README and `apps/wumblr/config.example.php` for the server-side half.
+That clone is not deployed anywhere; getting it live means opening a PR
+against the upstream repo (public config only — real secrets go to the
+maintainer privately, never into git) and having the maintainer add
+`apps/wumblr/config.php` with the real consumer key/secret to the live
+`oauth.wosa.link` deployment.
+
+The Tumblr app itself (at [tumblr.com/oauth/apps](https://www.tumblr.com/oauth/apps))
+also needs its default callback URL set to `https://oauth.wosa.link/callback.php`
+before any of this can work. Tumblr rejects a dynamically-supplied
+`oauth_callback` outright — confirmed against the live API, not assumed from
+the OAuth 1.0a spec, which technically allows one — so the broker sends a
+fixed callback with no query string, and Tumblr has to already recognize it.
+This was verified end to end against real Tumblr with the broker running
+locally and the app's callback pointed at that local address instead;
+switching both back to `oauth.wosa.link` is the only thing left to do once
+the PR lands.
 
 ## Build, install, run
 
@@ -154,7 +198,7 @@ Everything persists to **db8**, in three kinds:
 
 | Kind | Holds |
 |---|---|
-| `com.achunt.wumblr.prefs:1` | one record per setting — token, login server |
+| `com.achunt.wumblr.prefs:1` | one record per setting — mainly the Tumblr access token |
 | `com.achunt.wumblr.reblog:1` | one record per reblogged post |
 | `com.achunt.wumblr.blog:1` | one record per followed blog |
 
@@ -167,8 +211,8 @@ The awkward part is that db8 reads are asynchronous while the UI needs answers
 during render — a post row decides its reblog state while it is drawing.
 So everything is read into memory once at launch (`hydrate`) and served
 synchronously from there; writes go to db8 in the background. The app waits
-behind the scrim until that finishes, which is also why `LoginPanel` has a
-`refreshConfig` — it is built before the store can answer.
+behind the scrim (`LoginPanel.setBusy`) until that finishes before deciding
+whether a stored token means it can skip straight past sign-in.
 
 ### The following list is the one that matters
 
@@ -225,6 +269,7 @@ differences:
 | `fetch` + Promises | `enyo.xhr` + callbacks |
 | `crypto-js` + `oauth-1.0a` | `source/lib/Sha1.js`, `source/lib/OAuth1.js` |
 | db8 via `LS2Request` | db8 via `services/Store.js` (localStorage only as an off-device fallback) |
+| Bespoke companion server for login | Shared community OAuth broker — see **Sign-in** above |
 | ES2015+, JSX | ES5 only — no `let`/`const`, arrow functions, template literals, `Promise`, `Set`, or `Function.prototype.bind` |
 
 `Sha1.js` and `OAuth1.js` are dependency-free rewrites, verified against
@@ -235,11 +280,55 @@ test vector.
 no actual translations, so strings are plain English here rather than carrying
 an unused indirection layer.
 
-## Not verified
+## Verification history
 
-The login flow is **untested end to end** — it needs the companion server,
-which was not running. What is implemented is the same exchange the Enact app
-performed: `GET {loginServer}/wumblr/heresTheCode?code=…` expecting
-`{accessToken, tokenSecret}` back. Everything downstream of a token (feeds,
-likes, reblogs, follow, following list) was exercised against a stubbed client
-in the harness, not against live Tumblr.
+The broker's `oauth1_3legged` addition (see **Sign-in**) went through three
+rounds, each catching something the previous one couldn't:
+
+1. **Against a local stub provider** (not real Tumblr) — PHP's built-in
+   server hosting the broker, plus a stub that independently re-implements
+   OAuth1 HMAC-SHA1 verification from the spec rather than reusing the
+   broker's own signing code, so it actually catches a bad signature instead
+   of just agreeing with one. Both signing calls passed; also checked an
+   unknown/expired code, a forged `oauth_verifier` (rejected), a replayed
+   callback (rejected), and that restructuring the shared `callback.php`
+   didn't regress the pre-existing `oauth2_authcode` path. This caught
+   nothing wrong with the code, but proved nothing about real Tumblr either —
+   see the next round.
+
+2. **Against real `tumblr.com`, from a local broker instance** (the real
+   device signed in through this exact path — see below) — found two things
+   the spec-level testing above could not have: PHP's cURL needs an explicit
+   CA bundle on a bare Windows install to complete TLS to Tumblr at all
+   (`curl_errno 60`, "unable to get local issuer certificate" — unrelated to
+   the broker's code, an environment gap), and Tumblr **rejects a
+   dynamically-supplied `oauth_callback`** ("Disallowed oauth_callback
+   specified") even though the OAuth 1.0a spec allows one. The broker's
+   design changed as a result: `oauth_callback` is now always the fixed
+   `callbackUrl()` with no query string, and `callback.php` correlates the
+   pending login via session alone rather than via `?app=&code=` on the
+   callback URL. The broker's own docs previously and wrongly claimed Tumblr
+   needed no callback registration — corrected once this was actually tested
+   rather than assumed from the generic spec.
+
+3. **A real sign-in, end to end, on the actual TouchPad** — Sign In on the
+   device produced a real code, a phone/PC browser completed Tumblr's actual
+   consent screen, and the device picked up real tokens via the normal
+   background poll, no manual step beyond what the UI already offers. This
+   is the strongest evidence available short of the production broker itself
+   being live.
+
+**What that leaves unverified:** everything above ran against a broker
+instance on the developer's own machine, with the Tumblr app's callback
+temporarily pointed at it instead of at `oauth.wosa.link`. The **production**
+path — `apps/wumblr/config.php` live on the real broker, the Tumblr app's
+callback pointed back at `https://oauth.wosa.link/callback.php` — has not
+been exercised, though nothing about that switch changes any code, only
+which fixed URL two config values point at. Also still unverified: the
+interaction between webOS's actual TLS stack and whatever SSL-bump proxy a
+real device sits behind for the get-code/check-code calls (verified so far
+over plain HTTP on the LAN, since that's what local testing needed).
+
+Everything downstream of a token (feeds, likes, reblogs, follow, following
+list) was exercised against a stubbed client in the harness, not against live
+Tumblr, same as before this change.

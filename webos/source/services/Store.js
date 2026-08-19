@@ -148,7 +148,7 @@
 
 	function hydrateFromLocal () {
 		prefs = {};
-		var names = ["token", "tokenSecret", "loginServer", "loginServerBaseline"];
+		var names = ["token", "tokenSecret"];
 		for (var i = 0; i < names.length; i++) {
 			var v = localGet(names[i], null);
 			if (v !== null) prefs[names[i]] = v;
@@ -173,7 +173,7 @@
 	function migrateFromLocal () {
 		var migrated = false;
 		var objects = [];
-		var names = ["token", "tokenSecret", "loginServer", "loginServerBaseline"];
+		var names = ["token", "tokenSecret"];
 
 		for (var i = 0; i < names.length; i++) {
 			var v = localGet(names[i], null);
@@ -222,10 +222,7 @@
 		outside the encrypted partition.
 	*/
 	function clearLocalLeftovers () {
-		var names = [
-			"token", "tokenSecret", "loginServer", "loginServerBaseline",
-			"cache.reblogged", "cache.following"
-		];
+		var names = ["token", "tokenSecret", "cache.reblogged", "cache.following"];
 		var cleared = 0;
 		for (var i = 0; i < names.length; i++) {
 			if (localGet(names[i], null) !== null) {
